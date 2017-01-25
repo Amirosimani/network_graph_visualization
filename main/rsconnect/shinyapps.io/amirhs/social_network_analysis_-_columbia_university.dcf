@@ -3,8 +3,8 @@ title: Social Network Analysis - Columbia University
 account: amirhs
 server: shinyapps.io
 appId: 153163
-bundleId: 690892
+bundleId: 690909
 url: https://amirhs.shinyapps.io/social_network_analysis_-_columbia_university/
-when: 1485370593.052
+when: 1485371462.05768
 asMultiple: FALSE
 asStatic: FALSE

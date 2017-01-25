@@ -3,7 +3,7 @@ library(NLP)
 library(tm)
 library(igraph)
 library(networkD3)
-library(RCurl)
+library(readr)
 
 
 w <- "240px"
@@ -33,9 +33,8 @@ u <- shinyUI(fluidPage(
       )
     )
   ))
-
-adj_file <- read.csv('/Users/Amiros/Downloads/matrix.csv' ,header=TRUE,row.names=NULL,check.names=FALSE)
-attributes <- read.csv('/Users/Amiros/Downloads/atts.csv', header=TRUE) # see  Lazega-atts.csv  on Courseworks
+adj_file <- read.csv('https://raw.githubusercontent.com/Amirosimani/network_graph_visualization/master/matrix.csv' ,header=TRUE,row.names=NULL,check.names=FALSE)
+attributes <- read.csv('https://raw.githubusercontent.com/Amirosimani/network_graph_visualization/master/atts.csv', header=TRUE) # see  Lazega-atts.csv  on Courseworks
 
   
 s <- shinyServer(
