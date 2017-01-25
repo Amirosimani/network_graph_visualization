@@ -8,6 +8,9 @@ library(readr)
 
 w <- "240px"
 h <- "240px"
+
+
+if (interactive()) {
 u <- shinyUI(fluidPage(
   titlePanel("Social Network Analysis"),
   sidebarLayout(
@@ -15,8 +18,13 @@ u <- shinyUI(fluidPage(
     sidebarPanel(
       h2("Controls"),
       # import adjacency matrix and attribute matrix
-      fileInput('adj_file', 'Adjacency CSV file', accept = c('text/csv','.csv')),
-      fileInput('attr_file', 'Attributes CSV file', accept = c('text/csv','.csv')),
+      fileInput("file1", "Adjacency CSV file",
+                accept = c(
+                  "text/csv",
+                  "text/comma-separated-values,text/plain",
+                  ".csv")
+      ),
+      #fileInput('attr_file', 'Attributes CSV file', accept = c('text/csv','.csv')),
       checkboxInput('header', 'Header', TRUE),
       checkboxInput('directed', 'Directed', TRUE),
       checkboxInput('weighted', 'Weighted', TRUE),
@@ -28,23 +36,32 @@ u <- shinyUI(fluidPage(
       h2("Network Graphs"),
       tabsetPanel(
         tabPanel("Fruchterman-Reingold", plotOutput("fmr")),
-        tabPanel("Summary", dendroNetworkOutput("dendro"))
+        tabPanel("Summary", tableOutput("contents"))
         )
       )
     )
   ))
-adj_file <- read.csv('https://raw.githubusercontent.com/Amirosimani/network_graph_visualization/master/matrix.csv' ,header=TRUE,row.names=NULL,check.names=FALSE)
+
 attributes <- read.csv('https://raw.githubusercontent.com/Amirosimani/network_graph_visualization/master/atts.csv', header=TRUE) # see  Lazega-atts.csv  on Courseworks
 
   
 s <- shinyServer(
   function(input, output)
   {
-  mat <- as.matrix(adj_file)
-
     fmrlayout <- reactive({
       set.seed(input$fmrseed)
-      g <- graph.adjacency(mat, weighted = T, mode = "undirected")
+      
+      inFile <- input$file1
+      
+      if (is.null(inFile))
+        return(NULL)
+      
+      adj_data <- read.csv(inFile$datapath, header = input$header)
+      
+               
+      adj_mat <- as.matrix(adj_data)
+      
+      g <- graph.adjacency(adj_mat, weighted = T, mode = "undirected")
       g <- simplify(g)
       V(g)$label <- V(g)$name
       V(g)$degree <- degree(g)
@@ -60,10 +77,26 @@ s <- shinyServer(
     
     # Fruchterman-Reingold Network
     output$fmr <- renderPlot({
+
       rv <- fmrlayout()
       plot(rv$g, layout = rv$layout)
+    })
+    
+    output$contents <- renderTable({
+      # input$file1 will be NULL initially. After the user selects
+      # and uploads a file, it will be a data frame with 'name',
+      # 'size', 'type', and 'datapath' columns. The 'datapath'
+      # column will contain the local filenames where the data can
+      # be found.
+      inFile <- input$file1
+      
+      if (is.null(inFile))
+        return(NULL)
+      
+      read.csv(inFile$datapath, header = input$header)
     })
   }
 )
 
 shinyApp(ui = u,server = s)
+}
