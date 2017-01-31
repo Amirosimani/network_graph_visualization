@@ -10,7 +10,6 @@ w <- "240px"
 h <- "240px"
 
 
-if (interactive()) {
 u <- shinyUI(fluidPage(
   titlePanel("Social Network Analysis"),
   sidebarLayout(
@@ -18,31 +17,34 @@ u <- shinyUI(fluidPage(
     sidebarPanel(
       h2("Controls"),
       # import adjacency matrix and attribute matrix
-      fileInput("file1", "Adjacency CSV file",
+      fileInput("file1", "Adjacency Matrix CSV",
                 accept = c(
                   "text/csv",
                   "text/comma-separated-values,text/plain",
                   ".csv")
       ),
-      #fileInput('attr_file', 'Attributes CSV file', accept = c('text/csv','.csv')),
+      fileInput('attr_file', 'Attributes CSV', accept = c('text/csv','.csv')),
       checkboxInput('header', 'Header', TRUE),
-      checkboxInput('directed', 'Directed', TRUE),
+      checkboxInput('directed', 'Directed', FALSE),
       checkboxInput('weighted', 'Weighted', TRUE),
       tags$hr(),
       #sliderInput("sparse", "Sparsity:", 0.9, 1, 0.994,0.002),
-      numericInput("fmrseed", "F-R Seed:", 1234, 1, 10000, 1)
+      selectInput("layout", label = h3("Select a Layout"), 
+                  choices = list("Fruchterman Reingold" = 1, "Choice 2" = 2, "Choice 3" = 3), 
+                  selected = 1),
+      numericInput("fmrseed", "Seed:", 1234, 1, 10000, 1)
     ),
     mainPanel(
       h2("Network Graphs"),
       tabsetPanel(
-        tabPanel("Fruchterman-Reingold", plotOutput("fmr")),
+        tabPanel("Network Graph", plotOutput("fmr")),
         tabPanel("Summary", tableOutput("contents"))
         )
       )
     )
   ))
 
-attributes <- read.csv('https://raw.githubusercontent.com/Amirosimani/network_graph_visualization/master/atts.csv', header=TRUE) # see  Lazega-atts.csv  on Courseworks
+#attributes <- read.csv('https://raw.githubusercontent.com/Amirosimani/network_graph_visualization/master/atts.csv', header=TRUE) # see  Lazega-atts.csv  on Courseworks
 
   
 s <- shinyServer(
@@ -58,28 +60,51 @@ s <- shinyServer(
       
       adj_data <- read.csv(inFile$datapath, header = input$header)
       
-               
       adj_mat <- as.matrix(adj_data)
+
+      if (input$directed == TRUE)
+         directed_choice <- 'directed'
+      else
+         directed_choice <- 'undirected' 
       
-      g <- graph.adjacency(adj_mat, weighted = T, mode = "undirected")
+      g <- graph.adjacency(adj_mat, weighted = input$weighted, mode = directed_choice)
       g <- simplify(g)
       V(g)$label <- V(g)$name
       V(g)$degree <- degree(g)
-      layout <- layout.fruchterman.reingold(g)
+      if (input$layout == 1){
+        layout <- layout.fruchterman.reingold(g)}
       rv <- list()
       rv$g <- g
       rv$layout <- layout
       rv
     })
     
-  
-    ###Different Social Network Graphics
-    
-    # Fruchterman-Reingold Network
+    attr_fnc <- reactive({
+      attr_inFile <- input$attr_file
+      
+      if (is.null(attr_inFile))
+        return(NULL)
+      
+      attr_data <- read.csv(attr_inFile$datapath, header = input$header)
+      
+      inFile <- input$file1
+      
+      if (is.null(inFile))
+        return(NULL)
+      
+      adj_data <- read.csv(inFile$datapath, header = input$header)
+      
+    })
+#http://stackoverflow.com/questions/41385314/network-analysis-in-shiny
+
+    #  Network Graph
     output$fmr <- renderPlot({
 
       rv <- fmrlayout()
-      plot(rv$g, layout = rv$layout)
+      plot(rv$g,
+           layout = rv$layout,
+           edge.arrow.size=0.5
+           )
     })
     
     output$contents <- renderTable({
@@ -99,4 +124,3 @@ s <- shinyServer(
 )
 
 shinyApp(ui = u,server = s)
-}
